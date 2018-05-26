@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 
 app.use(express.json())
-
+// comment
 const courses = [
     { id: 1, name: "Course 1"},
     { id: 2, name: "Course 2"},
