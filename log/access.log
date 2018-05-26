@@ -1,0 +1,4 @@
+PUT /api/courses/1 200 21 - 15.361 ms
+PUT /api/courses/1 200 21 - 2.026 ms
+PUT /api/courses/1 200 21 - 1.955 ms
+::1 - - [26/May/2018:21:09:06 +0000] "PUT /api/courses/1 HTTP/1.1" 200 21 "-" "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36"

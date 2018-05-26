@@ -1,8 +1,31 @@
 const express = require('express');
+const morgan = require('morgan');
 const app = express();
 const Joi = require('joi');
+const logger = require('./logger');
+const helmet = require('helmet')
+const fs = require('fs');
 
-app.use(express.json())
+
+app.use(express.json());
+//app.use(logger);
+app.use(express.urlencoded({extended: true}));
+app.use(express.static('public'));
+app.use(helmet());
+//const accessLogStream = fs.createWriteStream('./log/access.log', {flags: 'a'})
+
+if(app.get('env') === 'development'){
+    console.log("DEVELOPMENT ENV!")
+    app.use(morgan("combined"));
+    console.log("Morgan Enabled!");
+}
+
+
+
+app.use((req, res, next) =>{
+    //console.log("Authenticating...")
+    next();
+})
 // comment
 const courses = [ 
     { id: 1, name: "Course 1"},
@@ -12,47 +35,41 @@ const courses = [
 ];
 
 app.delete('/api/courses/:id', (req,res) => {
-    //course = courses.find()
+    const course = courses.find(c => c.id === parseInt(req.params.id))
+    if(!course) return status(404).send('The given id was not found')
+
+    const index = courses.indexOf(course)
+
+    courses.splice(index, 1);
+
+    res.send(course)
 });
 
 app.put('/api/courses/:id', (req, res) => {
 
     const course = courses.find(c => c.id === parseInt(req.params.id))
-    if(!course) res.status(404).send('The given id was not found')
+    if(!course) return status(404).send('The given id was not found')
 
-    const schema = {
-        name: Joi.string().min(3).required()
-    };
+    const { error } = validateCourse(req.body)
+    if(error) return res.status(400).send(error.details[0].message)
 
-    const result = Joi.validate(req.body, schema);
-    if(result.error){
-        res.status(400).send(result.error.details[0].message)
-        return
-    }
-
-    
+    course.name = req.body.name;    
 
     res.send(course)
 });
 
 app.post('/api/courses', (req, res) => {
 
-    const schema = {
-        name: Joi.string().min(3).required()
-    };
-
-    const result = Joi.validate(req.body, schema);
-    if(result.error){
-        res.status(400).send(result.error.details[0].message)
-        return
-    }
+    const { error } = validateCourse(req.body)
+    
+    if(error) return res.status(400).send(error.details[0].message)
 
     const course = {
         id: courses.length + 1,
         name: req.body.name
     }
     courses.push(course);
-    res.send(course);
+    res.status(200).send(course);
     
 })
 
@@ -61,11 +78,10 @@ app.get('/api/courses', (req, res) => {
 })
 
 app.get('/api/courses/:id', (req, res) => {
-    const course = courses.find((c) => {
-        return c.id === parseInt(req.params.id)
-    })
+    const course = courses.find(c => c.id === parseInt(req.params.id))
 
-    if(!course) res.status(404).send('The given id was not found')
+    if(!course) return status(404).send('The given id was not found')
+
     res.send(course)
 })
 
@@ -74,3 +90,12 @@ const port = process.env.VIDLY_PORT || 3000
 app.listen(port, () => {
     console.log("Starting server on port "+port)
 })
+
+
+function validateCourse(course){
+    const schema = {
+        name: Joi.string().min(3).required()
+    };
+
+    return Joi.validate(course, schema);
+}
